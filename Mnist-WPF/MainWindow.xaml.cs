@@ -21,7 +21,9 @@ namespace Mnist_WPF
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
         public Func<float, string> Formatter { get; set; }
-
+        /// <summary>
+        /// MainWIndow 생성자
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -49,7 +51,7 @@ namespace Mnist_WPF
         /// <returns>조정된 이미지</returns>
         public static Bitmap ResizeImage(Image image, int width, int height)
         {
-            var destRect = new System.Drawing.Rectangle(0, 0, width, height);
+            var destRect = new Rectangle(0, 0, width, height);
             var destImage = new Bitmap(width, height);
 
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
@@ -72,20 +74,27 @@ namespace Mnist_WPF
             return destImage;
         }
 
+        /// <summary>
+        /// 그림판의 변화가 끝났을 때
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void InputCanvasStrokeCollected(object sender, System.Windows.Controls.InkCanvasStrokeCollectedEventArgs e)
         {
             int width = (int)InputCanvas.ActualWidth;
             int height = (int)InputCanvas.ActualHeight;
+            // 그림판의 그림을 28 * 28 크기 비트맵으로 변환해서 저장
             RenderTargetBitmap rb = new RenderTargetBitmap(width, height, 96d, 96d, PixelFormats.Default);
             rb.Render(InputCanvas);
             MemoryStream stream = new MemoryStream();
             BitmapEncoder encoder = new BmpBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(rb));
             encoder.Save(stream);
-
             Bitmap bitmap = new Bitmap(stream);
             bitmap = ResizeImage(bitmap, 28, 28);
             bitmap.Save(@"C:\Users\User\source\repos\Mnist\Mnist\bin\Debug\test.png", ImageFormat.Png);
+
+            // 모델의 입력을 방금 저장한 파일로 지정해서 결과 출력
             ModelInput input = new ModelInput();
             input.ImageSource = @"C:\Users\User\source\repos\Mnist\Mnist\bin\Debug\test.png";
             ModelOutput output = ConsumeModel.Predict(input);
@@ -93,9 +102,14 @@ namespace Mnist_WPF
             SeriesCollection[0].Values = new ChartValues<float>(output.Score.AsEnumerable());
         }
 
+        /// <summary>
+        /// 리셋 버튼 눌렀을 때
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ResetButtonClick(object sender, RoutedEventArgs e)
         {
-            InputCanvas.Strokes.Clear();
+            InputCanvas.Strokes.Clear();    // 그림판 초기화
         }
     }
 }
